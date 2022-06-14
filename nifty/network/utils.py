@@ -1,4 +1,4 @@
-from scapy.all import srp, conf, Ether, ARP, IFACES
+from scapy.all import *
 
 
 def get_mac(IP: str, interface="wlan0"):
@@ -7,6 +7,10 @@ def get_mac(IP: str, interface="wlan0"):
                     iface=interface, inter=0.1)
     for snd, rcv in ans:
         return rcv.sprintf(r"%Ether.src%")
+
+
+def get_router_ip():
+    return conf.route.route("0.0.0.0")[2]
 
 
 def get_interfaces():
