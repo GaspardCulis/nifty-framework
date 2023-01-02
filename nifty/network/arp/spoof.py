@@ -1,5 +1,6 @@
 import os
 from scapy.all import *
+from scapy.layers.l2 import ARP
 from ..utils import get_mac, get_router_ip
 from time import sleep
 import multiprocessing

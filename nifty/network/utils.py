@@ -18,3 +18,9 @@ def get_interfaces():
     for iface in list(IFACES.data.values()):
         out.append(iface.description)
     return out
+
+def check_root():
+    if os.geteuid() != 0:
+        print("You need to have root privileges to run this script.")
+        print("Please try again, this time using 'sudo'. Exiting.")
+        exit()

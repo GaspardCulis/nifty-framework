@@ -1,2 +1,4 @@
 scapy
 pydivert
+netfilterqueue
+python-nmap
