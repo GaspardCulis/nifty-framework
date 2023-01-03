@@ -1,13 +1,14 @@
 import os
 from scapy.all import *
 from scapy.layers.l2 import ARP
-from ..utils import get_mac, get_router_ip
+from nifty.network.utils import get_mac, get_router_ip
 from time import sleep
+import nifty.config as config
 import multiprocessing
 
 
 class ARPSpoofer():
-    def __init__(self, target_ip: str, interface: str="wlan0", router_ip=get_router_ip()):
+    def __init__(self, target_ip: str, interface=config.interface, router_ip=get_router_ip()):
         self.target_ip = target_ip
         self.router_ip = router_ip
         self.target_mac = get_mac(self.target_ip, interface)

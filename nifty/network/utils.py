@@ -1,7 +1,8 @@
 from scapy.all import *
+import nifty.config as config
 
 
-def get_mac(ip: str, interface="wlan0") -> str:
+def get_mac(ip: str, interface=config.interface) -> str:
     conf.verb = 0
     ans, uans = srp(Ether(dst="ff:ff:ff:ff:ff:ff")/ARP(pdst=IP), timeout=2,
                     iface=interface, inter=0.1)

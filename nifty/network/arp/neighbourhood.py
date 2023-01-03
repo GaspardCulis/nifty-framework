@@ -1,6 +1,7 @@
 from scapy.layers.l2 import ARP, Ether
 from scapy.sendrecv import srp
 from ..utils import check_root, get_if_addr
+import nifty.config as config
 import nmap
 
 class NetworkDevice():
@@ -14,7 +15,7 @@ class NetworkDevice():
     def __repr__(self):
         return self.__str__()
 
-def arp_scan(iface="wlan0", cidr_range="auto") -> list[NetworkDevice]:
+def arp_scan(iface=config.interface, cidr_range="auto") -> list[NetworkDevice]:
     check_root()
 
 
