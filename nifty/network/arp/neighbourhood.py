@@ -3,7 +3,18 @@ from scapy.sendrecv import srp
 from ..utils import check_root, get_if_addr
 import nmap
 
-def arp_scan(iface="wlan0", cidr_range="auto") -> list:
+class NetworkDevice():
+    def __init__(self, ip: str, mac: str | None):
+        self.ip: str = ip
+        self.mac: str | None = mac
+
+    def __str__(self) -> str:
+        return "{"+f"ip: {self.ip}, mac: {self.mac}"+"}"
+
+    def __repr__(self):
+        return self.__str__()
+
+def arp_scan(iface="wlan0", cidr_range="auto") -> list[NetworkDevice]:
     check_root()
 
 
@@ -22,11 +33,6 @@ def arp_scan(iface="wlan0", cidr_range="auto") -> list:
 
     # iterate through the hosts and add their IP and MAC addresses to the list
     for host in nm.all_hosts():
-        print(host)
-        device = {
-            "ip": host,
-            "mac": 'mac' in nm[host]['addresses'] and nm[host]['addresses']['mac'] or None
-        }
-        devices.append(device)
+        devices.append(NetworkDevice(host, 'mac' in nm[host]['addresses'] and nm[host]['addresses']['mac'] or None))
 
     return devices
