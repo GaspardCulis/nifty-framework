@@ -2,3 +2,4 @@ scapy
 pydivert
 netfilterqueue
 python-nmap
+netifaces
