@@ -1,6 +1,6 @@
 from scapy.layers.l2 import ARP, Ether
 from scapy.sendrecv import srp
-from ..utils import check_root, get_if_addr
+from ..utils import check_root, get_if_cidr
 import nifty.config as config
 import nmap
 
@@ -15,19 +15,18 @@ class NetworkDevice():
     def __repr__(self):
         return self.__str__()
 
-def arp_scan(iface=config.interface, cidr_range="auto") -> list[NetworkDevice]:
+def arp_scan(iface:str=None, cidr_range="auto") -> list[NetworkDevice]:
+    if not iface:iface=config.interface
     check_root()
 
 
     if cidr_range == "auto":
-        ip = get_if_addr(iface)
-        cidr_range = ip.split(".")
-        cidr_range = ".".join(cidr_range[:-1]) + ".0/24"   
+        cidr_range = get_if_cidr(iface)
 
     nm = nmap.PortScanner()
 
     #scan the network
-    nm.scan(hosts=cidr_range, arguments='-sn')
+    nm.scan(hosts=cidr_range, arguments='-sn', sudo=True)
 
     # create a list of devices on the network
     devices = []

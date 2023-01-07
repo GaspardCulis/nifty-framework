@@ -1,8 +1,11 @@
 from nifty.network.arp.spoof import ARPSpoofer
 from nifty.network.arp.neighbourhood import arp_scan
+import nifty.config as config
 from nifty.network.arp.spoof import MITM
 from netfilterqueue import Packet
 from scapy.all import IP
+
+config.interface = "wlan1"
 
 targets = arp_scan()
 for i in range(len(targets)):

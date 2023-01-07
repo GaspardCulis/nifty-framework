@@ -9,7 +9,8 @@ from netfilterqueue import NetfilterQueue
 
 
 class ARPSpoofer():
-    def __init__(self, target_ip: str, interface=config.interface, router_ip=get_router_ip()):
+    def __init__(self, target_ip: str, interface:str=None, router_ip=get_router_ip()):
+        if not interface:interface=config.interface
         self.target_ip = target_ip
         self.router_ip = router_ip
         self.target_mac = get_mac(self.target_ip, interface)
@@ -56,7 +57,8 @@ class MITM():
     
     _registered_queues = []
 
-    def start(callback, interface=config.interface, verbose=True):
+    def start(callback, interface:str=None, verbose=True):
+        if not interface:interface=config.interface
         # Find free queue number
         queue_num = 1
         while queue_num in MITM._registered_queues:
