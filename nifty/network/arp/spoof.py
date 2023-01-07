@@ -3,17 +3,22 @@ from scapy.all import *
 from scapy.layers.l2 import ARP
 from nifty.network.utils import get_mac, get_router_ip
 from time import sleep
+import nifty.network.arp.neighbourhood as neighbourhood
 import nifty.config as config
 from threading import Thread
 from netfilterqueue import NetfilterQueue
 
 
 class ARPSpoofer():
-    def __init__(self, target_ip: str, interface:str=None, router_ip=get_router_ip()):
+    def __init__(self, target_ip: str | neighbourhood.NetworkDevice, interface:str=None, router_ip=get_router_ip()):
         if not interface:interface=config.interface
-        self.target_ip = target_ip
+        if isinstance(target_ip, neighbourhood.NetworkDevice):
+            self.target_ip = target_ip.ip
+            self.target_mac = target_ip.mac
+        else:
+            self.target_ip = target_ip
+            self.target_mac = get_mac(self.target_ip, interface)
         self.router_ip = router_ip
-        self.target_mac = get_mac(self.target_ip, interface)
         self.router_mac = get_mac(self.router_ip, interface)
         self.running = False
         if not self.target_mac:

