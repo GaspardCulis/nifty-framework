@@ -1,18 +1,30 @@
-import os
 from scapy.all import *
-from scapy.layers.l2 import ARP
+from scapy.layers.l2 import ARP, Ether
+from scapy.sendrecv import srp
+from nifty.network.utils import check_root, get_if_cidr
 from nifty.network.utils import get_mac, get_router_ip
-from time import sleep
-import nifty.network.arp.neighbourhood as neighbourhood
+from netfilterqueue import NetfilterQueue
 import nifty.config as config
 from threading import Thread
-from netfilterqueue import NetfilterQueue
+from time import sleep
+import nmap
+import os
 
+class NetworkDevice():
+    def __init__(self, ip: str, mac: str | None):
+        self.ip: str = ip
+        self.mac: str | None = mac
+
+    def __str__(self) -> str:
+        return "{"+f"ip: {self.ip}, mac: {self.mac}"+"}"
+
+    def __repr__(self):
+        return self.__str__()
 
 class ARPSpoofer():
-    def __init__(self, target_ip: str | neighbourhood.NetworkDevice, interface:str=None, router_ip=get_router_ip()):
+    def __init__(self, target_ip: str | NetworkDevice, interface:str=None, router_ip=get_router_ip()):
         if not interface:interface=config.interface
-        if isinstance(target_ip, neighbourhood.NetworkDevice):
+        if isinstance(target_ip, NetworkDevice):
             self.target_ip = target_ip.ip
             self.target_mac = target_ip.mac
         else:
@@ -59,41 +71,24 @@ class ARPSpoofer():
              hwdst="ff:ff:ff:ff:ff:ff", hwsrc=self.router_mac), count=7)
 
 
-class MITM():
-    
-    _registered_queues = []
+def arp_scan(iface:str=None, cidr_range="auto") -> list[NetworkDevice]:
+    if not iface:iface=config.interface
+    check_root()
 
-    def start(callback, interface:str=None, verbose=True):
-        if not interface:interface=config.interface
-        # Find free queue number
-        queue_num = 1
-        while queue_num in MITM._registered_queues:
-            queue_num += 1
-        MITM._registered_queues.append(queue_num)
-        # Backup iptables
-        print("Saving iptables rules to /tmp/iptables.rules")
-        os.system("iptables-save > /tmp/iptables.rules")
-        # Add iptables rules
-        print("Adding iptables rules")
-        os.system("iptables -t raw -A PREROUTING -i {} -j NFQUEUE --queue-num {}".format(
-            interface,
-            queue_num
-        ))
 
-        # Start MITM
-        nf = NetfilterQueue()
-        nf.bind(queue_num, callback)
-        try:
-            print("Starting NetfilterQueue")
-            nf.run()
-        except KeyboardInterrupt:
-            pass
-        nf.unbind()
-        # Restore iptables
-        print("Restoring iptables rules")
-        os.system("iptables-restore < /tmp/iptables.rules")
-        print("Restarting firewall")
-        os.system("systemctl restart firewalld")
+    if cidr_range == "auto":
+        cidr_range = get_if_cidr(iface)
 
-        MITM._registered_queues.remove(queue_num)
+    nm = nmap.PortScanner()
 
+    #scan the network
+    nm.scan(hosts=cidr_range, arguments='-sn', sudo=True)
+
+    # create a list of devices on the network
+    devices = []
+
+    # iterate through the hosts and add their IP and MAC addresses to the list
+    for host in nm.all_hosts():
+        devices.append(NetworkDevice(host, 'mac' in nm[host]['addresses'] and nm[host]['addresses']['mac'] or None))
+
+    return devices
